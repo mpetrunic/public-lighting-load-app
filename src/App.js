@@ -12,7 +12,10 @@ class App extends Component {
       streets: [],
       street: null,
       totalWatts: 0,
-      avgWatts: 0
+      avgWatts: 0,
+      maxWatts: 0,
+      minWatts: Number.MAX_SAFE_INTEGER,
+      streetData: null
     }
   }
 
@@ -29,14 +32,20 @@ class App extends Component {
       street: street
     })
     const streetData = await streetService.fetchStreetData(street);
-    let sum = 0;
+    let sum = 0, min = Number.MAX_SAFE_INTEGER, max = 0;
     for(const segment of streetData.features) {
-      sum += parseInt(segment.properties.sum, 10);
+      const value = parseInt(segment.properties.sum, 10);
+      if(value < min) min = value;
+      if(value > max) max = value;
+      sum += value;
     }
 
     this.setState({
+      streetData,
       totalWatts: sum / 1000,
-      avgWatts: (sum/streetData.features.length)/1000
+      avgWatts: (sum/streetData.features.length)/1000,
+      minWatts: min,
+      maxWatts: max
     })
   }
 
@@ -59,7 +68,7 @@ class App extends Component {
 
         <div id="right">
           <div className="Map">
-            <GoogleMapComponent/>
+            <GoogleMapComponent data={this.state.streetData} minWatts={this.state.minWatts} maxWatts={this.state.maxWatts}/>
           </div>
           <div id="calculations">
             <h3>Street: {this.state.street}</h3>
